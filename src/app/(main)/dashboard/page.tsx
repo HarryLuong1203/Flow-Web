@@ -144,19 +144,31 @@ export default function DashboardPage() {
         onCreateGroup={handleCreateGroup}
       />
       <main className="flex-1 overflow-y-auto bg-muted/10 relative">
-        <div className="max-w-5xl mx-auto p-6 lg:p-10">
+        <div className="max-w-7xl mx-auto p-6 lg:p-10">
           <header className="mb-10 text-center sm:text-left">
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">Explore & Add Places</h1>
             <p className="text-muted-foreground mt-2 text-lg">
               Find and save places to your group board.
             </p>
           </header>
-          <SearchBar groups={groups} user={user} />
-          {currentGroupId && currentGroup && (
-            <div className="mt-10">
-              <GroupBoard groupId={currentGroupId} groupName={currentGroup.name} />
+          
+          <div className="flex flex-col xl:flex-row gap-8 items-start">
+            {/* Search Column */}
+            <div className="w-full xl:w-[450px] 2xl:w-[500px] shrink-0 xl:sticky xl:top-6">
+              <SearchBar groups={groups} user={user} />
             </div>
-          )}
+
+            {/* Board Column */}
+            <div className="flex-1 min-w-0 w-full">
+              {currentGroupId && currentGroup ? (
+                <GroupBoard groupId={currentGroupId} groupName={currentGroup.name} />
+              ) : (
+                <div className="h-[400px] border-2 border-dashed rounded-xl flex items-center justify-center text-muted-foreground">
+                  Select or create a group to view its board
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </main>
     </div>

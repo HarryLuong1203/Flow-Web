@@ -50,7 +50,7 @@ export function SearchBar({ groups, user }: SearchBarProps) {
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       <form onSubmit={handleSearch} className="relative">
         <div className="relative group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
