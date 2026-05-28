@@ -21,7 +21,7 @@ import {
   SelectItem,
 } from '@/components/ui/select'
 import { addBoardItem } from '@/lib/firestore'
-import type { PlaceResult, Group, BoardCategory } from '@/types'
+import type { PlaceResult, Group, BoardCategory, BoardItem } from '@/types'
 
 interface AddToGroupModalProps {
   place: PlaceResult | null
