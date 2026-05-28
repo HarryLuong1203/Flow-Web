@@ -210,6 +210,24 @@ export function PlaceDetailPanel({
                   {item.rating.toFixed(1)}
                 </Badge>
               )}
+              {item.michelinType === 'star' && (
+                <Badge className="bg-red-600 hover:bg-red-700 text-white font-semibold text-[10px] gap-1 shrink-0">
+                  <span className="text-amber-300">{'★'.repeat(item.michelinStars || 1)}</span>
+                  MICHELIN STARRED
+                </Badge>
+              )}
+              {item.michelinType === 'bib' && (
+                <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[10px] gap-1 shrink-0">
+                  <span>😋</span>
+                  BIB GOURMAND
+                </Badge>
+              )}
+              {item.michelinType === 'selected' && (
+                <Badge className="bg-zinc-800 hover:bg-zinc-900 text-white font-semibold text-[10px] gap-1 shrink-0">
+                  <span>🍽️</span>
+                  MICHELIN SELECTED
+                </Badge>
+              )}
             </div>
 
             {/* Quick actions */}

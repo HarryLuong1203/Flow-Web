@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { Search, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { PlaceCard } from '@/components/dashboard/PlaceCard'
+import { MichelinCard } from '@/components/dashboard/MichelinCard'
 import { AddToGroupModal } from '@/components/dashboard/AddToGroupModal'
 import type { PlaceResult, Group } from '@/types'
 
@@ -15,6 +16,7 @@ interface SearchBarProps {
 export function SearchBar({ groups, user }: SearchBarProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<PlaceResult[]>([])
+  const [michelinResults, setMichelinResults] = useState<PlaceResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -37,34 +39,58 @@ export function SearchBar({ groups, user }: SearchBarProps) {
         searchUrl = `/api/tiktok?url=${encodeURIComponent(query)}`
       }
 
-      const res = await fetch(searchUrl)
-      const data = await res.json()
-      
-      if (data.error) {
-        setErrorMsg(data.error)
-        setResults([])
-        return
-      }
+      if (isTikTok) {
+        setMichelinResults([])
+        const res = await fetch(searchUrl)
+        const data = await res.json()
+        
+        if (data.error) {
+          setErrorMsg(data.error)
+          setResults([])
+          return
+        }
 
-      if (isTikTok && data.result) {
-        const tk = data.result
-        setResults([{
-          placeId: tk.url,
-          name: tk.title,
-          address: `TikTok Video by ${tk.authorName}`,
-          rating: 0,
-          photoUrl: tk.thumbnailUrl,
-          website: tk.url,
-          phoneNumber: null,
-          isMostVisited: false,
-          lat: null,
-          lng: null,
-          type: 'tiktok',
-          videoUrl: tk.url,
-          videoEmbedHtml: tk.embedHtml,
-          authorName: tk.authorName
-        }])
+        if (data.result) {
+          const tk = data.result
+          setResults([{
+            placeId: tk.url,
+            name: tk.title,
+            address: `TikTok Video by ${tk.authorName}`,
+            rating: 0,
+            photoUrl: tk.thumbnailUrl,
+            website: tk.url,
+            phoneNumber: null,
+            isMostVisited: false,
+            lat: null,
+            lng: null,
+            type: 'tiktok',
+            videoUrl: tk.url,
+            videoEmbedHtml: tk.embedHtml,
+            authorName: tk.authorName
+          }])
+        }
       } else {
+        const michelinUrl = `/api/places/michelin?query=${encodeURIComponent(query)}`
+        
+        // Parallel fetching
+        const [res, michRes] = await Promise.all([
+          fetch(searchUrl),
+          fetch(michelinUrl)
+        ])
+
+        const [data, michData] = await Promise.all([
+          res.json(),
+          michRes.json()
+        ])
+
+        setMichelinResults(michData.results || [])
+
+        if (data.error) {
+          setErrorMsg(data.error)
+          setResults([])
+          return
+        }
+
         setResults(data.results || [])
       }
     } catch (error) {
@@ -106,15 +132,51 @@ export function SearchBar({ groups, user }: SearchBarProps) {
         </div>
       )}
 
-      {results.length > 0 && (
-        <div className="space-y-4">
-          {results.map((place) => (
-            <PlaceCard
-              key={place.placeId}
-              place={place}
-              onAddToGroup={handleAddToGroup}
-            />
-          ))}
+      {(results.length > 0 || michelinResults.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in-0 duration-300">
+          {/* General Results Column */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              🔍 Tìm kiếm chung ({results.length})
+            </h3>
+            {results.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground bg-muted/20 border border-dashed rounded-xl">
+                Không tìm thấy địa điểm nào
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {results.map((place) => (
+                  <PlaceCard
+                    key={place.placeId}
+                    place={place}
+                    onAddToGroup={handleAddToGroup}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Michelin Guide Column */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-red-500 dark:text-red-400 flex items-center gap-2">
+              🌟 Michelin Guide ({michelinResults.length})
+            </h3>
+            {michelinResults.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground bg-red-950/5 border border-red-900/10 border-dashed rounded-xl">
+                Không tìm thấy gợi ý Michelin nào khớp
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {michelinResults.map((place) => (
+                  <MichelinCard
+                    key={place.placeId}
+                    place={place}
+                    onAddToGroup={handleAddToGroup}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

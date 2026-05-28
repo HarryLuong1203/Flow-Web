@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useGroups } from '@/hooks/useGroups'
@@ -20,11 +20,94 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { michelinPlaces } from '@/data/michelinData'
+import { MichelinCard } from '@/components/dashboard/MichelinCard'
+import { AddToGroupModal } from '@/components/dashboard/AddToGroupModal'
+import type { PlaceResult } from '@/types'
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
   const groups = useGroups()
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null)
+  
+  // Real-time user location, defaulting to HCMC Center (District 1) where Michelin restaurants are centered
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>({ lat: 10.7760, lng: 106.7015 })
+
+  // Michelin horizontal row modal state
+  const [selectedMichelinPlace, setSelectedMichelinPlace] = useState<PlaceResult | null>(null)
+  const [michelinModalOpen, setMichelinModalOpen] = useState(false)
+
+  const handleAddMichelinToGroup = (place: PlaceResult) => {
+    setSelectedMichelinPlace(place)
+    setMichelinModalOpen(true)
+  }
+
+  // Get user location on mount (asynchronously update if permitted)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCoords({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          })
+        },
+        (error) => {
+          console.log('Browser geolocation declined or failed.', error)
+        }
+      )
+    }
+  }, [])
+
+  // Helper to calculate distance in km between two coordinates (Haversine formula)
+  const getDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371 // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180
+    const dLon = (lon2 - lon1) * Math.PI / 180
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+  }
+
+  // Process and sort Michelin restaurants by distance
+  const featuredMichelinPlaces: PlaceResult[] = React.useMemo(() => {
+    const list = michelinPlaces.map(place => {
+      let distanceText = ''
+      let distanceKm = 999999
+      if (coords) {
+        const dist = getDistanceKm(coords.lat, coords.lng, place.lat, place.lng)
+        distanceKm = dist
+        distanceText = dist < 1 
+          ? `Cách ${Math.round(dist * 1000)}m` 
+          : `Cách ${dist.toFixed(1)}km`
+      }
+      return {
+        placeId: place.placeId,
+        name: place.name,
+        address: place.address,
+        rating: place.rating,
+        photoUrl: place.photoUrl,
+        website: place.website,
+        phoneNumber: place.phoneNumber,
+        isMostVisited: false,
+        lat: place.lat,
+        lng: place.lng,
+        michelinType: place.michelinType,
+        michelinStars: place.stars,
+        distanceText,
+        distanceKm
+      }
+    })
+
+    // If coordinates are loaded, sort by distance
+    if (coords) {
+      return list.sort((a, b) => a.distanceKm - b.distanceKm)
+    }
+    return list
+  }, [coords])
   
   // Dialog state for "empty state" create group
   const [open, setOpen] = useState(false)
@@ -169,8 +252,41 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+
+          {/* Michelin Guide Hot Recommendations Row */}
+          <div className="w-full mt-12 pt-8 border-t border-border">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                  <span>🏆</span> Michelin Guide — Địa điểm Đang Hot
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Đề xuất các nhà hàng đạt sao Michelin, Selected & Bib Gourmand xuất sắc nhất tại Việt Nam. Cuộn ngang để khám phá!
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
+              {featuredMichelinPlaces.map((place) => (
+                <MichelinCard
+                  key={place.placeId}
+                  place={place}
+                  onAddToGroup={handleAddMichelinToGroup}
+                  layout="compact"
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </main>
+
+      <AddToGroupModal
+        place={selectedMichelinPlace}
+        open={michelinModalOpen}
+        onOpenChange={setMichelinModalOpen}
+        groups={groups}
+        user={user}
+      />
     </div>
   )
 }

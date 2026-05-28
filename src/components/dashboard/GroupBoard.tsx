@@ -162,9 +162,26 @@ function BoardItemRow({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium leading-snug truncate ${accent}`}>
-          {item.name}
-        </p>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <p className={`text-sm font-semibold leading-snug truncate ${accent}`}>
+            {item.name}
+          </p>
+          {item.michelinType === 'star' && (
+            <span className="text-[10px] font-bold bg-red-600 text-white px-1 py-0.2 rounded shrink-0 leading-none">
+              ★ {item.michelinStars} Michelin
+            </span>
+          )}
+          {item.michelinType === 'bib' && (
+            <span className="text-[10px] font-bold bg-emerald-600 text-white px-1 py-0.2 rounded shrink-0 leading-none">
+              😋 Bib
+            </span>
+          )}
+          {item.michelinType === 'selected' && (
+            <span className="text-[10px] font-bold bg-zinc-800 text-white px-1 py-0.2 rounded shrink-0 leading-none">
+              🍽️ Michelin
+            </span>
+          )}
+        </div>
         <StarRating rating={item.rating} />
         <div className="flex items-center gap-1 mt-1">
           <MapPin className="h-3 w-3 shrink-0 text-muted-foreground" />

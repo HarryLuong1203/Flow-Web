@@ -71,26 +71,31 @@ export function AddToGroupModal({
 
     setIsSubmitting(true)
     try {
-      await addBoardItem(selectedGroupId, {
+      const itemData: Omit<BoardItem, 'id' | 'addedAt'> = {
         type: place.type || 'place',
         placeId: place.placeId,
         name: place.name,
         address: place.address,
         rating: place.rating,
         photoUrl: customPhotoUrl.trim() || place.photoUrl || '',
-        website: place.website,
-        phoneNumber: place.phoneNumber,
+        website: place.website || null,
+        phoneNumber: place.phoneNumber || null,
         category: selectedCategory,
         addedBy: user.uid,
         addedByName: user.displayName || user.email,
-        lat: place.lat,
-        lng: place.lng,
+        lat: place.lat || null,
+        lng: place.lng || null,
         votes: {},
-        videoUrl: place.videoUrl,
-        videoEmbedHtml: place.videoEmbedHtml,
-        authorName: place.authorName,
         comments: [],
-      })
+      }
+
+      if (place.videoUrl) itemData.videoUrl = place.videoUrl
+      if (place.videoEmbedHtml) itemData.videoEmbedHtml = place.videoEmbedHtml
+      if (place.authorName) itemData.authorName = place.authorName
+      if (place.michelinType) itemData.michelinType = place.michelinType
+      if (place.michelinStars) itemData.michelinStars = place.michelinStars
+
+      await addBoardItem(selectedGroupId, itemData)
 
       setShowSuccess(true)
       setTimeout(() => {

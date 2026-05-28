@@ -27,8 +27,12 @@ export function subscribeToUserGroups(email: string, callback: (groups: Group[])
 
 // Thêm địa điểm vào board
 export async function addBoardItem(groupId: string, item: Omit<BoardItem, 'id' | 'addedAt'>) {
+  // Remove any undefined fields to prevent Firestore serialization errors
+  const cleanItem = Object.fromEntries(
+    Object.entries(item).filter(([, v]) => v !== undefined)
+  )
   await addDoc(collection(db, 'groups', groupId, 'boardItems'), {
-    ...item,
+    ...cleanItem,
     addedAt: serverTimestamp()
   })
 }

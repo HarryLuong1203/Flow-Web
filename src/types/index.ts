@@ -50,6 +50,9 @@ export interface BoardItem {
   videoUrl?: string
   videoEmbedHtml?: string
   authorName?: string
+  // Michelin-specific
+  michelinType?: 'star' | 'bib' | 'selected'
+  michelinStars?: number
 }
 
 export interface PlaceResult {
@@ -67,6 +70,10 @@ export interface PlaceResult {
   videoUrl?: string
   videoEmbedHtml?: string
   authorName?: string
+  // Michelin-specific
+  michelinType?: 'star' | 'bib' | 'selected'
+  michelinStars?: number
+  distanceText?: string
 }
 
 export interface TikTokResult {
