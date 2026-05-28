@@ -115,7 +115,9 @@ export function LoginForm() {
   return (
     <div className="w-full max-w-md mx-auto">
       {/* Header */}
-      <div className="mb-8 text-center">
+      <div className="mb-8 text-center flex flex-col items-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.jpg" alt="Flow Web Logo" className="h-16 w-16 mb-4 object-cover rounded-xl shadow-lg ring-1 ring-white/10" />
         <h1 className="text-3xl font-bold tracking-tight text-white">
           Welcome back
         </h1>

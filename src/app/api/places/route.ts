@@ -111,7 +111,9 @@ export async function GET(request: Request) {
           photoUrl,
           website,
           phoneNumber,
-          isMostVisited
+          isMostVisited,
+          lat: venue.location?.lat || null,
+          lng: venue.location?.lng || null,
         }
       })
     )

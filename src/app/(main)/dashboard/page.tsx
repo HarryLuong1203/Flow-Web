@@ -161,7 +161,7 @@ export default function DashboardPage() {
             {/* Board Column */}
             <div className="flex-1 min-w-0 w-full">
               {currentGroupId && currentGroup ? (
-                <GroupBoard groupId={currentGroupId} groupName={currentGroup.name} />
+                <GroupBoard groupId={currentGroupId} groupName={currentGroup.name} groups={groups} user={user} />
               ) : (
                 <div className="h-[400px] border-2 border-dashed rounded-xl flex items-center justify-center text-muted-foreground">
                   Select or create a group to view its board

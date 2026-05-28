@@ -718,3 +718,24 @@ npm run dev
 ---
 
 *Tài liệu này cover toàn bộ yêu cầu đã thảo luận. Mọi thay đổi spec cần update tài liệu này trước khi code.*
+
+---
+
+## 12. Giai đoạn 4 — Nâng cấp (Comments, TikTok, Nearby)
+*(Được yêu cầu bổ sung thêm)*
+
+### 12.1 Gợi ý lân cận (Nearby)
+- **Tình trạng:** Thực tế đã được code hoàn chỉnh (Component `NearbyGuide` và API `/api/places/nearby`).
+- **Lý do lỗi trong hình:** Các địa điểm cũ được lưu trong Firestore từ trước khi có tính năng Nearby có thể không có tọa độ (`lat`, `lng`), nên không gợi ý được. 
+- **Giải pháp:** Với các địa điểm search và add mới, hệ thống đã lưu tọa độ và sẽ tự động hiển thị gợi ý (Quán ăn, Cafe, Tham quan, Lưu trú).
+
+### 12.2 Tính năng Bình luận & Đồng ý/Không đồng ý
+- **Backend:** Thêm mảng `comments` vào schema `BoardItem` trong `types/index.ts`. Tạo hàm `addComment` trong `lib/firestore.ts`.
+- **Frontend (`PlaceDetailPanel.tsx`):** 
+  - Cập nhật giao diện chi tiết địa điểm, bổ sung thêm khu vực "Thảo luận" (Comment section).
+  - Tích hợp nút Vote (Đồng ý / Không đồng ý) ngay bên trong panel chi tiết cho rõ ràng (hiện tại nút vote đang ở bên ngoài thẻ trong Group Board).
+
+### 12.3 Thêm địa điểm bằng link TikTok
+- **Backend:** Tạo API Route mới `/api/tiktok/route.ts` để gọi API oEmbed của TikTok nhằm lấy thumbnail, title, author và mã nhúng video HTML.
+- **Frontend (`SearchBar.tsx`):** Tự động nhận diện (auto-detect) nếu link dán vào là link TikTok (`tiktok.com` hoặc `vm.tiktok.com`) thì sẽ gọi API TikTok thay vì Google/Foursquare.
+- **Frontend (`PlaceDetailPanel.tsx`):** Nếu địa điểm được thêm là loại "TikTok", sẽ render trực tiếp iframe/nhúng video TikTok để các thành viên có thể xem ngay trên web mà không cần chuyển trang.

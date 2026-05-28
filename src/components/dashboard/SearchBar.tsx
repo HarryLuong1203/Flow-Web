@@ -29,13 +29,44 @@ export function SearchBar({ groups, user }: SearchBarProps) {
     setIsLoading(true)
     setErrorMsg('')
     try {
-      const res = await fetch(`/api/places?query=${encodeURIComponent(query)}`)
+      let isTikTok = false
+      let searchUrl = `/api/places?query=${encodeURIComponent(query)}`
+
+      if (query.includes('tiktok.com') || query.includes('vm.tiktok.com')) {
+        isTikTok = true
+        searchUrl = `/api/tiktok?url=${encodeURIComponent(query)}`
+      }
+
+      const res = await fetch(searchUrl)
       const data = await res.json()
       
       if (data.error) {
         setErrorMsg(data.error)
+        setResults([])
+        return
       }
-      setResults(data.results || [])
+
+      if (isTikTok && data.result) {
+        const tk = data.result
+        setResults([{
+          placeId: tk.url,
+          name: tk.title,
+          address: `TikTok Video by ${tk.authorName}`,
+          rating: 0,
+          photoUrl: tk.thumbnailUrl,
+          website: tk.url,
+          phoneNumber: null,
+          isMostVisited: false,
+          lat: null,
+          lng: null,
+          type: 'tiktok',
+          videoUrl: tk.url,
+          videoEmbedHtml: tk.embedHtml,
+          authorName: tk.authorName
+        }])
+      } else {
+        setResults(data.results || [])
+      }
     } catch (error) {
       console.error('Failed to search places:', error)
       setErrorMsg('Đã có lỗi xảy ra khi tìm kiếm.')

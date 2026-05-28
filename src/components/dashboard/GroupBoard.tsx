@@ -1,17 +1,20 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Star, MapPin, Trash2, UtensilsCrossed, Coffee, Hotel, Map } from 'lucide-react'
+import { Star, MapPin, Trash2, ThumbsUp, ThumbsDown, UtensilsCrossed, Coffee, Hotel, Map } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useBoardItems } from '@/hooks/useBoardItems'
-import { deleteBoardItem } from '@/lib/firestore'
-import type { BoardCategory, BoardItem } from '@/types'
+import { deleteBoardItem, voteBoardItem } from '@/lib/firestore'
+import { PlaceDetailPanel } from '@/components/dashboard/PlaceDetailPanel'
+import type { BoardCategory, BoardItem, Group } from '@/types'
 
 interface GroupBoardProps {
   groupId: string
   groupName: string
+  groups: Group[]
+  user: { uid: string; displayName: string; email: string } | null
 }
 
 const categoryConfig: Record<BoardCategory, {
@@ -71,18 +74,33 @@ function StarRating({ rating }: { rating: number }) {
   )
 }
 
+function getVoteScore(votes: Record<string, 'up' | 'down'> | undefined) {
+  if (!votes) return 0
+  let score = 0
+  for (const v of Object.values(votes)) {
+    if (v === 'up') score++
+    else if (v === 'down') score--
+  }
+  return score
+}
+
 function BoardItemRow({
   item,
   groupId,
   accent,
+  userId,
+  onClickItem,
 }: {
   item: BoardItem
   groupId: string
   accent: string
+  userId: string | null
+  onClickItem: (item: BoardItem) => void
 }) {
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation()
     setIsDeleting(true)
     try {
       await deleteBoardItem(groupId, item.id)
@@ -92,12 +110,57 @@ function BoardItemRow({
     }
   }
 
+  const handleVote = async (e: React.MouseEvent, vote: 'up' | 'down') => {
+    e.stopPropagation()
+    if (!userId) return
+    try {
+      await voteBoardItem(groupId, item.id, userId, vote)
+    } catch (err) {
+      console.error('Failed to vote:', err)
+    }
+  }
+
+  const votes = item.votes || {}
+  const myVote = userId ? votes[userId] : undefined
+  const score = getVoteScore(votes)
+
   return (
     <div
-      className={`group/item flex items-start gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 hover:bg-muted/60 ${
+      className={`group/item flex items-start gap-2 rounded-lg px-3 py-2.5 transition-all duration-200 hover:bg-muted/60 cursor-pointer ${
         isDeleting ? 'opacity-40 pointer-events-none scale-95' : ''
       }`}
+      onClick={() => onClickItem(item)}
     >
+      {/* Vote buttons */}
+      <div className="flex flex-col items-center gap-0 shrink-0 pt-0.5">
+        <button
+          onClick={(e) => handleVote(e, 'up')}
+          className={`p-0.5 rounded transition-colors ${
+            myVote === 'up'
+              ? 'text-emerald-500'
+              : 'text-muted-foreground/40 hover:text-emerald-400'
+          }`}
+        >
+          <ThumbsUp className="h-3.5 w-3.5" />
+        </button>
+        <span className={`text-[10px] font-bold leading-tight ${
+          score > 0 ? 'text-emerald-500' : score < 0 ? 'text-red-400' : 'text-muted-foreground/50'
+        }`}>
+          {score > 0 ? `+${score}` : score}
+        </span>
+        <button
+          onClick={(e) => handleVote(e, 'down')}
+          className={`p-0.5 rounded transition-colors ${
+            myVote === 'down'
+              ? 'text-red-400'
+              : 'text-muted-foreground/40 hover:text-red-400'
+          }`}
+        >
+          <ThumbsDown className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {/* Content */}
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-medium leading-snug truncate ${accent}`}>
           {item.name}
@@ -108,6 +171,8 @@ function BoardItemRow({
           <p className="text-xs text-muted-foreground truncate">{item.address}</p>
         </div>
       </div>
+
+      {/* Delete */}
       <Button
         variant="ghost"
         size="sm"
@@ -125,13 +190,20 @@ function CategoryCard({
   category,
   items,
   groupId,
+  userId,
+  onClickItem,
 }: {
   category: BoardCategory
   items: BoardItem[]
   groupId: string
+  userId: string | null
+  onClickItem: (item: BoardItem) => void
 }) {
   const config = categoryConfig[category]
   const Icon = config.icon
+
+  // Sort by vote score descending
+  const sortedItems = [...items].sort((a, b) => getVoteScore(b.votes) - getVoteScore(a.votes))
 
   return (
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20 border-0 ring-1 ring-foreground/5">
@@ -156,12 +228,14 @@ function CategoryCard({
           </div>
         ) : (
           <div className="space-y-0.5 max-h-[320px] overflow-y-auto">
-            {items.map((item) => (
+            {sortedItems.map((item) => (
               <BoardItemRow
                 key={item.id}
                 item={item}
                 groupId={groupId}
                 accent={config.accent}
+                userId={userId}
+                onClickItem={onClickItem}
               />
             ))}
           </div>
@@ -171,8 +245,17 @@ function CategoryCard({
   )
 }
 
-export function GroupBoard({ groupId, groupName }: GroupBoardProps) {
+export function GroupBoard({ groupId, groupName, groups, user }: GroupBoardProps) {
   const items = useBoardItems(groupId)
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
+
+  const selectedItem = items.find(item => item.id === selectedItemId) || null
+
+  const handleClickItem = (item: BoardItem) => {
+    setSelectedItemId(item.id)
+    setDetailOpen(true)
+  }
 
   const itemsByCategory = categories.reduce(
     (acc, cat) => {
@@ -200,9 +283,20 @@ export function GroupBoard({ groupId, groupName }: GroupBoardProps) {
             category={category}
             items={itemsByCategory[category]}
             groupId={groupId}
+            userId={user?.uid || null}
+            onClickItem={handleClickItem}
           />
         ))}
       </div>
+
+      <PlaceDetailPanel
+        item={selectedItem}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        groupId={groupId}
+        groups={groups}
+        user={user}
+      />
     </section>
   )
 }

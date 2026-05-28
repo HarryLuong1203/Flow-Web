@@ -171,9 +171,10 @@ export function Sidebar({ groups, activeGroupId, setActiveGroupId, onCreateGroup
 
   return (
     <div className="w-64 border-r bg-background h-[calc(100vh-64px)] flex flex-col">
-      <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <LayoutDashboard className="h-5 w-5" />
+      <div className="p-4 border-b flex items-center justify-between">
+        <h2 className="text-lg font-semibold flex items-center gap-2.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.jpg" alt="Flow Web" className="h-7 w-7 rounded-md object-cover ring-1 ring-border shadow-sm" />
           My Groups
         </h2>
       </div>

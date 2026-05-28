@@ -72,3 +72,53 @@ export async function addMemberEmail(groupId: string, emailToAdd: string) {
 export async function deleteBoardItem(groupId: string, itemId: string) {
   await deleteDoc(doc(db, 'groups', groupId, 'boardItems', itemId))
 }
+
+// Vote cho địa điểm (toggle: bấm lần nữa = huỷ vote)
+export async function voteBoardItem(
+  groupId: string,
+  itemId: string,
+  userId: string,
+  vote: 'up' | 'down'
+) {
+  const itemRef = doc(db, 'groups', groupId, 'boardItems', itemId)
+  // Lấy snapshot hiện tại
+  const { getDoc: getDocFn } = await import('firebase/firestore')
+  const snap = await getDocFn(itemRef)
+  if (!snap.exists()) return
+
+  const data = snap.data()
+  const currentVotes: Record<string, string> = data.votes || {}
+
+  // Toggle: nếu đã vote giống thì xoá, nếu khác hoặc chưa có thì set
+  if (currentVotes[userId] === vote) {
+    // Huỷ vote
+    delete currentVotes[userId]
+  } else {
+    currentVotes[userId] = vote
+  }
+
+  await updateDoc(itemRef, { votes: currentVotes })
+}
+
+// Thêm bình luận vào board item
+export async function addBoardItemComment(
+  groupId: string,
+  itemId: string,
+  userId: string,
+  userName: string,
+  text: string
+) {
+  const itemRef = doc(db, 'groups', groupId, 'boardItems', itemId)
+  
+  const newComment = {
+    id: Date.now().toString() + Math.random().toString(36).substring(7),
+    userId,
+    userName,
+    text,
+    createdAt: new Date().toISOString()
+  }
+
+  await updateDoc(itemRef, {
+    comments: arrayUnion(newComment)
+  })
+}

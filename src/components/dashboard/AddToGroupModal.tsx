@@ -72,6 +72,7 @@ export function AddToGroupModal({
     setIsSubmitting(true)
     try {
       await addBoardItem(selectedGroupId, {
+        type: place.type || 'place',
         placeId: place.placeId,
         name: place.name,
         address: place.address,
@@ -82,6 +83,13 @@ export function AddToGroupModal({
         category: selectedCategory,
         addedBy: user.uid,
         addedByName: user.displayName || user.email,
+        lat: place.lat,
+        lng: place.lng,
+        votes: {},
+        videoUrl: place.videoUrl,
+        videoEmbedHtml: place.videoEmbedHtml,
+        authorName: place.authorName,
+        comments: [],
       })
 
       setShowSuccess(true)
