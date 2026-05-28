@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   MapPin, Star, Globe, Phone, ExternalLink, Navigation,
   ThumbsUp, ThumbsDown, MessageCircle, Send, Loader2
@@ -49,6 +49,30 @@ export function PlaceDetailPanel({
 }: PlaceDetailPanelProps) {
   const [commentText, setCommentText] = useState('')
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+
+  // Dynamic loading and refreshing of TikTok oEmbed script
+  useEffect(() => {
+    if (open && item && item.type === 'tiktok') {
+      const existingScript = document.getElementById('tiktok-embed-script')
+      if (!existingScript) {
+        const script = document.createElement('script')
+        script.id = 'tiktok-embed-script'
+        script.src = 'https://www.tiktok.com/embed.js'
+        script.async = true
+        document.body.appendChild(script)
+      } else {
+        // If script already exists, try to trigger a load scan for new blockquotes
+        try {
+          const win = window as unknown as { widgets?: { load?: () => void } }
+          if (win.widgets && typeof win.widgets.load === 'function') {
+            win.widgets.load()
+          }
+        } catch (e) {
+          console.warn('Failed to reload TikTok widget:', e)
+        }
+      }
+    }
+  }, [open, item])
 
   if (!item) return null
 
@@ -102,8 +126,22 @@ export function PlaceDetailPanel({
             <div>
               <DialogTitle className="text-xl md:text-2xl">{item.name}</DialogTitle>
               <DialogDescription className="flex items-center gap-1.5 mt-1">
-                <MapPin className="h-3.5 w-3.5 shrink-0" />
-                {item.address}
+                {item.type === 'tiktok' ? (
+                  <a
+                    href={item.videoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 text-pink-500 hover:underline font-medium text-xs break-all"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0 text-pink-500" />
+                    {item.videoUrl}
+                  </a>
+                ) : (
+                  <>
+                    <MapPin className="h-3.5 w-3.5 shrink-0" />
+                    {item.address}
+                  </>
+                )}
               </DialogDescription>
             </div>
             
@@ -175,7 +213,21 @@ export function PlaceDetailPanel({
             </div>
 
             {/* Quick actions */}
-            {item.type !== 'tiktok' && (
+            {item.type === 'tiktok' ? (
+              <div className="grid grid-cols-1 gap-2">
+                {item.videoUrl && (
+                  <a
+                    href={item.videoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center gap-2 h-11 rounded-lg bg-[#FE2C55] text-white font-semibold text-sm hover:bg-[#FE2C55]/95 transition-colors shadow-sm"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Xem video trên TikTok
+                  </a>
+                )}
+              </div>
+            ) : (
               <div className="grid grid-cols-1 gap-2">
                 <a
                   href={googleMapsUrl}
