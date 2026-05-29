@@ -20,16 +20,14 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Bước 1: Tìm kiếm bằng Foursquare V2 explore (tên + địa chỉ + reasons)
-    const fsqUrl = new URL('https://api.foursquare.com/v2/venues/explore')
+    // Bước 1: Tìm kiếm bằng Foursquare V2 search để chính xác hơn
+    const fsqUrl = new URL('https://api.foursquare.com/v2/venues/search')
     fsqUrl.searchParams.append('client_id', clientId)
     fsqUrl.searchParams.append('client_secret', clientSecret)
     fsqUrl.searchParams.append('v', '20231010')
     fsqUrl.searchParams.append('query', query)
     fsqUrl.searchParams.append('near', 'Ho Chi Minh City, VN')
-    fsqUrl.searchParams.append('venuePhotos', '1')
-    fsqUrl.searchParams.append('sortByPopularity', '1')
-    fsqUrl.searchParams.append('limit', '10')
+    fsqUrl.searchParams.append('limit', '6')
 
     const fsqRes = await fetch(fsqUrl.toString())
 
@@ -40,16 +38,13 @@ export async function GET(request: Request) {
     }
 
     const fsqData = await fsqRes.json()
-    const items = fsqData.response?.groups?.[0]?.items || []
+    const items = fsqData.response?.venues || []
 
     // Bước 2: Bổ sung ảnh + thông tin chi tiết bằng Nominatim + Wikipedia
     const results: PlaceResult[] = await Promise.all(
-      items.map(async (item: any, index: number) => {
-        const venue = item.venue
-        const reasons = item.reasons?.items || []
-        const isPopular = reasons.some((r: any) =>
-          r.reasonName === 'globalInteractionReason' || r.summary?.includes('popular')
-        )
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      items.map(async (venue: any, index: number) => {
+        const isPopular = index < 3 // Ưu tiên top 3 kết quả trả về là phổ biến
 
         // Lấy ảnh từ Foursquare (nếu có)
         let photoUrl = null

@@ -10,14 +10,18 @@ import type { PlaceResult } from '@/types'
 interface PlaceCardProps {
   place: PlaceResult
   onAddToGroup: (place: PlaceResult) => void
+  onClick?: (place: PlaceResult) => void
 }
 
-export function PlaceCard({ place, onAddToGroup }: PlaceCardProps) {
+export function PlaceCard({ place, onAddToGroup, onClick }: PlaceCardProps) {
   const fullStars = Math.floor(place.rating)
   const hasHalfStar = place.rating % 1 >= 0.3
 
   return (
-    <Card className="group/card relative overflow-hidden bg-background/50 backdrop-blur-sm border-muted/60 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/20">
+    <Card 
+      onClick={() => onClick && onClick(place)}
+      className={`group/card relative overflow-hidden bg-background/50 backdrop-blur-sm border-muted/60 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/20 ${onClick ? 'cursor-pointer' : ''}`}
+    >
       {/* Most Visited Badge */}
       {place.isMostVisited && (
         <div className="absolute top-3 left-3 z-10 animate-in fade-in-0 slide-in-from-left-2 duration-500">
@@ -33,7 +37,10 @@ export function PlaceCard({ place, onAddToGroup }: PlaceCardProps) {
         size="icon-sm"
         variant="default"
         className="absolute top-3 right-3 z-10 opacity-0 scale-90 shadow-lg transition-all duration-200 group-hover/card:opacity-100 group-hover/card:scale-100 hover:scale-110"
-        onClick={() => onAddToGroup(place)}
+        onClick={(e) => {
+          e.stopPropagation()
+          onAddToGroup(place)
+        }}
       >
         <Plus className="h-4 w-4" />
         <span className="sr-only">Add to group</span>
@@ -51,8 +58,8 @@ export function PlaceCard({ place, onAddToGroup }: PlaceCardProps) {
             />
           </div>
         ) : (
-          <div className="w-full sm:w-48 h-48 sm:h-auto shrink-0 bg-muted flex items-center justify-center">
-            <MapPin className="h-10 w-10 text-muted-foreground/30" />
+          <div className="w-full sm:w-48 h-48 sm:h-auto shrink-0 bg-gradient-to-br from-primary/5 via-muted to-primary/10 flex items-center justify-center relative overflow-hidden group-hover/card:from-primary/10 transition-colors duration-500">
+            <MapPin className="h-12 w-12 text-primary/20 drop-shadow-sm group-hover/card:scale-110 group-hover/card:text-primary/40 transition-all duration-500" />
           </div>
         )}
 

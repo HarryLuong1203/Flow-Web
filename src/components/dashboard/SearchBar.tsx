@@ -4,8 +4,8 @@ import React, { useState } from 'react'
 import { Search, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { PlaceCard } from '@/components/dashboard/PlaceCard'
-import { MichelinCard } from '@/components/dashboard/MichelinCard'
 import { AddToGroupModal } from '@/components/dashboard/AddToGroupModal'
+import { SearchResultDetailModal } from '@/components/dashboard/SearchResultDetailModal'
 import type { PlaceResult, Group } from '@/types'
 
 interface SearchBarProps {
@@ -16,13 +16,14 @@ interface SearchBarProps {
 export function SearchBar({ groups, user }: SearchBarProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<PlaceResult[]>([])
-  const [michelinResults, setMichelinResults] = useState<PlaceResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
   // Modal state
   const [selectedPlace, setSelectedPlace] = useState<PlaceResult | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
+  const [selectedDetailPlace, setSelectedDetailPlace] = useState<PlaceResult | null>(null)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,7 +41,6 @@ export function SearchBar({ groups, user }: SearchBarProps) {
       }
 
       if (isTikTok) {
-        setMichelinResults([])
         const res = await fetch(searchUrl)
         const data = await res.json()
         
@@ -70,20 +70,8 @@ export function SearchBar({ groups, user }: SearchBarProps) {
           }])
         }
       } else {
-        const michelinUrl = `/api/places/michelin?query=${encodeURIComponent(query)}`
-        
-        // Parallel fetching
-        const [res, michRes] = await Promise.all([
-          fetch(searchUrl),
-          fetch(michelinUrl)
-        ])
-
-        const [data, michData] = await Promise.all([
-          res.json(),
-          michRes.json()
-        ])
-
-        setMichelinResults(michData.results || [])
+        const res = await fetch(searchUrl)
+        const data = await res.json()
 
         if (data.error) {
           setErrorMsg(data.error)
@@ -104,6 +92,11 @@ export function SearchBar({ groups, user }: SearchBarProps) {
   const handleAddToGroup = (place: PlaceResult) => {
     setSelectedPlace(place)
     setModalOpen(true)
+  }
+
+  const handlePlaceClick = (place: PlaceResult) => {
+    setSelectedDetailPlace(place)
+    setDetailModalOpen(true)
   }
 
   return (
@@ -132,12 +125,11 @@ export function SearchBar({ groups, user }: SearchBarProps) {
         </div>
       )}
 
-      {(results.length > 0 || michelinResults.length > 0) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in-0 duration-300">
-          {/* General Results Column */}
+      {(results.length > 0) && (
+        <div className="animate-in fade-in-0 duration-300">
           <div className="space-y-4">
             <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              🔍 Tìm kiếm chung ({results.length})
+              🔍 Kết quả tìm kiếm ({results.length})
             </h3>
             {results.length === 0 ? (
               <div className="p-8 text-center text-sm text-muted-foreground bg-muted/20 border border-dashed rounded-xl">
@@ -150,28 +142,7 @@ export function SearchBar({ groups, user }: SearchBarProps) {
                     key={place.placeId}
                     place={place}
                     onAddToGroup={handleAddToGroup}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Michelin Guide Column */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-red-500 dark:text-red-400 flex items-center gap-2">
-              🌟 Michelin Guide ({michelinResults.length})
-            </h3>
-            {michelinResults.length === 0 ? (
-              <div className="p-8 text-center text-sm text-muted-foreground bg-red-950/5 border border-red-900/10 border-dashed rounded-xl">
-                Không tìm thấy gợi ý Michelin nào khớp
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {michelinResults.map((place) => (
-                  <MichelinCard
-                    key={place.placeId}
-                    place={place}
-                    onAddToGroup={handleAddToGroup}
+                    onClick={handlePlaceClick}
                   />
                 ))}
               </div>
@@ -186,6 +157,16 @@ export function SearchBar({ groups, user }: SearchBarProps) {
         onOpenChange={setModalOpen}
         groups={groups}
         user={user}
+      />
+
+      <SearchResultDetailModal
+        place={selectedDetailPlace}
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+        onAddClick={(place) => {
+          setSelectedPlace(place)
+          setModalOpen(true)
+        }}
       />
     </div>
   )
