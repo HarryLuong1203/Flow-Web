@@ -115,18 +115,24 @@ export function SearchResultDetailModal({ place, open, onOpenChange, onAddClick 
             </Button>
 
             {place.type === 'tiktok' && place.videoUrl ? (
-              <Button size="lg" variant="outline" className="w-full gap-2 border-pink-500 text-pink-500 hover:bg-pink-500/10" asChild>
-                <a href={place.videoUrl} target="_blank" rel="noreferrer">
-                  <ExternalLink className="h-4 w-4" />
-                  Mở trên TikTok
-                </a>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="w-full gap-2 border-pink-500 text-pink-500 hover:bg-pink-500/10" 
+                onClick={() => window.open(place.videoUrl, '_blank', 'noreferrer')}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Mở trên TikTok
               </Button>
             ) : (
-              <Button size="lg" variant="outline" className="w-full gap-2 bg-background/50 hover:bg-muted" asChild>
-                <a href={googleMapsUrl} target="_blank" rel="noreferrer">
-                  <MapPin className="h-4 w-4 text-blue-500" />
-                  Mở Google Maps
-                </a>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="w-full gap-2 bg-background/50 hover:bg-muted" 
+                onClick={() => window.open(googleMapsUrl, '_blank', 'noreferrer')}
+              >
+                <MapPin className="h-4 w-4 text-blue-500" />
+                Mở Google Maps
               </Button>
             )}
           </div>
